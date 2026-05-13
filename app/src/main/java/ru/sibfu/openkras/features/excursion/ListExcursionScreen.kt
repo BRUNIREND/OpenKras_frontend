@@ -115,7 +115,6 @@ fun ListExcursionScreen(
 
             }
         }
-
         state.error?.let {
             Text(text = "Ошибка: $it", color = Color.Red)
         }

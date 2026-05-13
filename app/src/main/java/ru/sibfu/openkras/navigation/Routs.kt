@@ -25,4 +25,8 @@ sealed class AuthScreenGraph{
     @Serializable
     data object RegistrationScreen : AuthScreenGraph()
 
+    @Serializable
+    data class OtpScreen(val email: String) : AuthScreenGraph()
+
+
 }
