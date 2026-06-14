@@ -1,10 +1,18 @@
 package ru.sibfu.domain.interfaces
 
 import ru.sibfu.domain.AuthResult
+import ru.sibfu.domain.UserRegistrationModel
+import ru.sibfu.domain.UsersModel
+import ru.sibfu.domain.usecase.exception.NetworkResult
 
 interface IAuthRepository {
-    suspend fun signIn(username: String, password: String): Result<AuthResult>
-    suspend fun signUp(username: String, email: String, password: String): Result<Unit>
-    suspend fun verifyOtp(email: String, code: String): Result<AuthResult>
+
+    fun cacheRegistrationData(user: UserRegistrationModel)
+    suspend fun signIn(email: String, password: String): NetworkResult<AuthResult>
+    suspend fun signUp(email: String): NetworkResult<Unit>
+    suspend fun verifyOtp(code: String): NetworkResult<AuthResult>
+
+    suspend fun reSendOtpCode(email: String): NetworkResult<Unit>
     suspend fun logout()
+    suspend fun getCurrentUser(): NetworkResult<UsersModel>
 }

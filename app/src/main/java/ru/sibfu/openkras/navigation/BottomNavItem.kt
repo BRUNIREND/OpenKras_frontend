@@ -3,18 +3,14 @@ package ru.sibfu.openkras.navigation
 
 import android.annotation.SuppressLint
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,17 +20,29 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 
-sealed class BottomNavItem (
-    val route: String,
+sealed class BottomNavItem<T : Any>(
+    val route: T,      // Теперь здесь объект маршрута
     val title: String,
     val icon: ImageVector
-){
-    object Home : BottomNavItem(route = "home", title =  "Экскурсии", Icons.Default.LocationOn)
-    object Favorite : BottomNavItem(route ="calendar", title = "Избранное", Icons.Default.FavoriteBorder)
-    object Profile : BottomNavItem(route ="profile", title = "Профиль", Icons.Default.Person)
+) {
+    object Home : BottomNavItem<MainScreenGraph.AllExcursionScreen>(
+        route = MainScreenGraph.AllExcursionScreen,
+        title = "Экскурсии",
+        icon = Icons.Outlined.LocationOn
+    )
+    object Favorite : BottomNavItem<MainScreenGraph.FavoriteScreen>(
+        route = MainScreenGraph.FavoriteScreen,
+        title = "Избранное",
+        icon = Icons.Default.FavoriteBorder
+    )
+    object Profile : BottomNavItem<ProfileScreenGraph.ProfileScreen>(
+        route = ProfileScreenGraph.ProfileScreen,
+        title = "Профиль",
+        icon = Icons.Outlined.Person
+    )
 }
 
-val bottomNavItems = listOf(
+val bottomNavItems: List<BottomNavItem<*>> = listOf(
     BottomNavItem.Home,
     BottomNavItem.Favorite,
     BottomNavItem.Profile,
@@ -45,16 +53,21 @@ val bottomNavItems = listOf(
 fun MyBottomNavigation(
     navController: NavController
 ){
-    NavigationBar {
+    NavigationBar (
+        containerColor = MaterialTheme.colorScheme.background
+    ){
         val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = navBackStackEntry?.destination
+        val currentDestination = navBackStackEntry?.destination
+
         bottomNavItems.forEach { item ->
+            val isSelected = currentDestination?.hasRoute(item.route::class) == true
+
             NavigationBarItem(
                 icon = {Icon(item.icon, contentDescription = item.title)},
                 label = { Text(item.title) },
-                selected = currentRoute?.hasRoute(item.route::class) == true,
+                selected = isSelected,
                 onClick = {
-                    navController.navigate(MainScreenGraph.AllExcursionScreen){
+                    navController.navigate(item.route){
                         popUpTo(navController.graph.findStartDestination().id){
                             saveState = true
                         }
@@ -63,8 +76,8 @@ fun MyBottomNavigation(
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
                     indicatorColor = MaterialTheme.colorScheme.primaryContainer,
                 )
             )

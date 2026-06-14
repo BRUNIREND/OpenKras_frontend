@@ -1,24 +1,23 @@
 package ru.sibfu.openkras.features.authentification.signUp
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import ru.sibfu.domain.usecase.authentificationUseCase.signUpUseCase
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.receiveAsFlow
+import ru.sibfu.domain.usecase.authentificationUseCase.SignUpUseCase
+import ru.sibfu.domain.usecase.exception.NetworkResult
 import javax.inject.Inject
-import kotlin.onSuccess
-import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
-import ru.sibfu.openkras.features.authentification.signIn.LoginEffect
 
 
 @HiltViewModel
 class UserRegistrationViewModel @Inject constructor(
-    private val signUpUseCase: signUpUseCase,
+    private val signUpUseCase: SignUpUseCase,
 ): ViewModel() {
     private val _state = MutableStateFlow(UserRegistrationState())
     val state: StateFlow<UserRegistrationState> = _state.asStateFlow()
@@ -44,7 +43,7 @@ class UserRegistrationViewModel @Inject constructor(
                 _state.update { it.copy(name = intent.name, error = null) }
             }
 
-            UserRegistrationIntent.LoginClicked -> _effect.trySend(UserRegistrationEffect.NavigateToLogin)
+            is UserRegistrationIntent.LoginClicked -> _effect.trySend(UserRegistrationEffect.NavigateToLogin)
         }
     }
 
@@ -52,17 +51,38 @@ class UserRegistrationViewModel @Inject constructor(
         val currentState = _state.value
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
+//            Log.d(
+//                TAG,
+//                "email: ${currentState.email}\n" +
+//                        "name: ${currentState.name}\n" +
+//                        "password: ${currentState.password}"
+//            )
+            when (val result =
+                signUpUseCase(
+                    email = currentState.email,
+                    name = currentState.name,
+                    password = currentState.password
+                )
 
-            signUpUseCase(
-                currentState.name, currentState.email,
-                password = currentState.password
-            )
-                .onSuccess {
+            ) {
+                is NetworkResult.Success -> {
+
                     _effect.send(UserRegistrationEffect.NavigateToOTP(currentState.email))
+                    _state.update { it.copy(isLoading = false) }
                 }
-                .onFailure { exc ->
-                    _state.update { it.copy(isLoading = false, error = exc.message) }
+                is NetworkResult.Error -> {
+                    // Показываем текст ошибки, который прислал FastAPI
+                    _effect.send(UserRegistrationEffect.ShowSnackbar(result.message))
+                    _state.update { it.copy(isLoading = false, error = result.message) }
                 }
+
+                is NetworkResult.Exception -> {
+                    // Ошибка сети (нет интернета)
+                    val text = "Проверьте подключение к интернету"
+                    _effect.send(UserRegistrationEffect.ShowSnackbar(text))
+                    _state.update { it.copy(isLoading = false, error = "Проверьте подключение к интернету") }
+                }
+            }
         }
     }
 }

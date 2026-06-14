@@ -8,6 +8,8 @@ data class UserRegistrationState (
     val password: String = "",
     val confirmPassword: String = ""
 ) {
+    val isEmailValid: Boolean
+        get() = android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     val isPasswordValid: Boolean = password.length >= 8 &&
             password.any { it.isUpperCase() } &&
             password.any { it.isLowerCase() }
@@ -18,5 +20,6 @@ data class UserRegistrationState (
             email.contains("@") &&
             isPasswordValid &&
             passwordsMatch &&
+            isEmailValid &&
             !isLoading
 }

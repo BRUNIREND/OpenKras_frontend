@@ -1,5 +1,6 @@
 package ru.sibfu.openkras.features.excursion
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,9 +33,9 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,7 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -54,32 +54,52 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
 import ru.sibfu.domain.CategoryModel
-import ru.sibfu.domain.ExcursionModel
-import ru.sibfu.domain.PointModel
+import ru.sibfu.domain.ExcursionShortModel
 import ru.sibfu.openkras.R
-import ru.sibfu.openkras.navigation.MyBottomNavigation
-import ru.sibfu.openkras.ui.theme.ThemePreviews
 import ru.sibfu.openkras.ui.theme.customShadow
 import ru.sibfu.openkras.ui.theme.statusColor
 
-
-
-//@ThemePreviews
 @Composable
 fun ListExcursionScreen(
-    navController: NavController = rememberNavController(),
-    viewModel: ExcursionViewModel = hiltViewModel()
-){
+    onNavigateToDetail: (Int) -> Unit,
+    viewModel: ExcursionViewModel = hiltViewModel(),
+    snackbarHostState: SnackbarHostState
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // Слушаем эффекты для навигации
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is ExcursionEffect.NavigateToDetail -> {
+                    onNavigateToDetail(effect.excursionId)
+                }
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.handleIntent(ExcursionIntent.LoadData)
     }
 
+    // Вызываем контентную часть
+    ListExcursionContent(
+        state = state,
+        onIntent = { viewModel.handleIntent(it) }
+    )
+}
+
+
+
+
+//@ThemePreviews
+@Composable
+fun ListExcursionContent(
+    state: ExcursionState,
+    onIntent: (ExcursionIntent) -> Unit
+){
     Box(modifier = Modifier.fillMaxSize()) {
         if (state.isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -89,48 +109,50 @@ fun ListExcursionScreen(
         LazyColumn {
             item {
                 SearchWithFilter(
-                    searchQuery = state.queryField ?: "",
+                    searchQuery = state.queryField,
                     onQueryChange = {
-                        viewModel.handleIntent(ExcursionIntent.QueryChange(it))
+                        onIntent(ExcursionIntent.QueryChange(it))
                     },
-                    onFilterClick = {
-                        viewModel.handleIntent(ExcursionIntent.ChangeFilterCloseState)
-                    },
+
                     onCategorySelected ={ category ->
-                        viewModel.handleIntent(ExcursionIntent.SelectCategory(category = category))
+                        onIntent(ExcursionIntent.SelectCategory(category = category))
                     },
-                    selectedCategory = state.selectedCategory?.toInt() ?: 0,
+                    selectedCategory = state.selectedCategory,
                     category = state.categoryItems,
-                    filterState = state.isFilterOpen
                 )
             }
             items(state.items) { excursion ->
                 ExcursionItem(
                     modifier = Modifier,
-                    excursion = testExcursion, // TODO("Заменить мок данных")
+                    excursion = excursion,
                     onClick = {
-                        navController.navigate("excursion/${excursion.id}") //TODO("Изменить на лаунч эффекты")
-                    }
-                )
+                        onIntent(ExcursionIntent.onNavigateToExcursionClick(excursion.id)) //TODO("Изменить на лаунч эффекты")
+                    },
+                    onFavoriteClick = {
+                        onIntent(ExcursionIntent.onAddExcursionToFavorites(excursion.id))
+                    },
+                    onFavoriteRemove = {
+                        onIntent(ExcursionIntent.onRemoveExcursionFromFavorites(excursion.id))
 
+                    },
+                    isFavorite = excursion.isFavorite,
+                )
             }
         }
         state.error?.let {
             Text(text = "Ошибка: $it", color = Color.Red)
         }
     }
-
 }
 @Composable
 fun SearchWithFilter(
-    selectedCategory: Int? = null,
+    selectedCategory: CategoryModel?,
     searchQuery: String,
     category: List<CategoryModel>,
     onQueryChange: (String) -> Unit,
-    onCategorySelected: (String) -> Unit,
-    onFilterClick: () -> Unit,
-    filterState: Boolean,
+    onCategorySelected: (CategoryModel) -> Unit,
 ) {
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -158,9 +180,7 @@ fun SearchWithFilter(
 
         // Кнопка категорий/фильтров
         FilterMenu(
-            onFilterClick = onFilterClick,
-            filterState = filterState,
-            categories = category, //MockData
+            categories = category,
             selectedCategory = selectedCategory,
             onCategorySelected = {onCategorySelected},
         )
@@ -168,28 +188,26 @@ fun SearchWithFilter(
 }
 
 
-//TODO(ПОлностью перелопатить)
 @Composable
 fun FilterMenu(
-    filterState: Boolean,
-    onFilterClick: () -> Unit,
     categories: List<CategoryModel>,
-    selectedCategory: Int?,
+    selectedCategory: CategoryModel? = CategoryModel(0, "Все"),
     onCategorySelected: (Int) -> Unit
 ) {
+    var isCategoryOpen by remember {mutableStateOf(false)}
 
     Box {
-        // Твоя кнопка из примера выше
+
         FilledIconButton(
-            onClick = onFilterClick,
-            modifier = Modifier.size(56.dp), // Совпадает со стандартной высотой TextField
+            onClick = {isCategoryOpen = !isCategoryOpen},
+            modifier = Modifier.size(56.dp),
             shape = RoundedCornerShape(12.dp),
             colors = IconButtonDefaults.filledIconButtonColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant
             )
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_filter), // Твоя иконка категорий
+                painter = painterResource(id = R.drawable.ic_filter),
                 contentDescription = "Категории",
                 modifier = Modifier.size(24.dp)
             )
@@ -197,14 +215,15 @@ fun FilterMenu(
 
         // Само меню
         DropdownMenu(
-            expanded = filterState,
-            onDismissRequest = { onFilterClick() },
+            expanded = isCategoryOpen,
+            onDismissRequest = {isCategoryOpen = !isCategoryOpen},
             modifier = Modifier.background(MaterialTheme.colorScheme.surface)
         ) {
             categories.forEach { category ->
                 DropdownMenuItem(
                     trailingIcon = {
-                        if (category.id == selectedCategory) {
+                        if (category.id == selectedCategory?.id) {
+
                             Icon(
                                 Icons.Default.Check,
                                 contentDescription = "Accept",
@@ -216,7 +235,6 @@ fun FilterMenu(
                     text = { Text(category.name) },
                     onClick = {
                         onCategorySelected(category.id)
-                        onFilterClick()
                     }
                 )
             }
@@ -224,40 +242,29 @@ fun FilterMenu(
     }
 }
 
-val testExcursion = ExcursionModel(
-    id = 1,
-    title = "Название экскурсии",
-    description = "Описание экскурсии",
-    coverUrl = "https://img.freepik.com/free-photo/view-funny-animal_23-2151098313.jpg?semt=ais_hybrid&w=740&q=80",
-    images = mutableListOf("https://img.freepik.com/free-photo/view-funny-animal_23-2151098313.jpg?semt=ais_hybrid&w=740&q=80"),
-    points = mutableListOf(
-        PointModel(
-            id = 1,
-            name = "Название точки",
-            description = "Описание точки",
-            address = "Адрес точки",
-            latitude = 55.7558,
-            longitude = 37.6176,
-            radiusMeters = 20,
-            audioUrl = mutableListOf("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"),
-            images = mutableListOf("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"),
-        )
-    ),
-    categoryId = 1,
-    duration = 20,
-    distance = 10.0
-)
+//val testExcursion = ExcursionShortModel(
+//    id = 1,
+//    title = "Название экскурсии",
+//    description = "Описание экскурсии",
+//    previewImageUrl = "https://img.freepik.com/free-photo/view-funny-animal_23-2151098313.jpg?semt=ais_hybrid&w=740&q=80",
+//    categoryId = 1,
+//    duration = 20,
+//    distance = 10.0,
+//    isFavorite = true
+//)
 
 
-@ThemePreviews
+//@ThemePreviews
 @Composable
 fun ExcursionItem(
     modifier: Modifier = Modifier,
-    excursion: ExcursionModel = testExcursion,
+    excursion: ExcursionShortModel,
     onClick: () -> Unit = {},
     isFavorite: Boolean = false,
-    onFavoriteClick: () -> Unit = {}
+    onFavoriteClick: () -> Unit = {},
+    onFavoriteRemove: () -> Unit = {}
 ){
+
     Card(
         onClick = onClick,
         modifier = modifier
@@ -280,8 +287,8 @@ fun ExcursionItem(
             Box(
                 modifier = Modifier.fillMaxWidth().height(92.dp)
             ){
-
-                ImageLoader(url = excursion.coverUrl)
+                Log.d("ImageLoader", "url: ${excursion.previewImageUrl}")
+                ImageLoader(url = excursion.previewImageUrl)
 
                 //Todo(Сделать чек наличия статуса от пользователя к экскурсии)
                 StatusBadge(
@@ -290,23 +297,30 @@ fun ExcursionItem(
                         .align(Alignment.TopStart)
                         .padding(8.dp)
                 )
+
                 IconButton(
-                    onClick = onFavoriteClick,
+                    onClick = {
+                        if (isFavorite){
+                            onFavoriteRemove()
+                        }else {
+                            onFavoriteClick()
+                        }
+                    },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                 ){
-                    Surface (
-                        modifier = modifier,
-                        color = statusColor, // Полупрозрачный фон
-                        shape = RoundedCornerShape(8.dp)
-                    ){
-                        Icon(
-                            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = "В избранное",
-                            tint = if (isFavorite) Color.Red else Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = "В избранное",
+                        tint = if (isFavorite) Color.Red else Color.White,
+                        modifier = Modifier.size(32.dp)
+                    )
+//                    Surface (
+//                        modifier = modifier,
+//                        color = statusColor, // Полупрозрачный фон
+//                        shape = RoundedCornerShape(8.dp)
+//                    ){
+//                    }
                 }
             }
 
@@ -330,7 +344,7 @@ fun ExcursionItem(
                 Row (
                     modifier = Modifier
                         .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp), // Расстояние между элементами
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
 
                 ){
                     InfoItem(iconId = R.drawable.ic_clock, text = "${excursion.duration} мин")
@@ -361,10 +375,15 @@ fun InfoItem(
         )
     }
 }
+
+
+//TODO(Заменить localhost на проде)
 @Composable
 fun ImageLoader(url: String?){
+    val correctedUrl = url?.replace("localhost:9000", "10.0.2.2:9000")
+        ?.replace("127.0.0.1:9000", "10.0.2.2:9000")
     AsyncImage(
-        model = url,
+        model = correctedUrl,
         contentDescription = "Фото экскурсии",
         placeholder = painterResource(R.drawable.img_mock),
         error = painterResource(R.drawable.img_mock_error),

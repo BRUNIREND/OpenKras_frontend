@@ -4,23 +4,29 @@ import com.google.gson.annotations.SerializedName
 
 
 data class RegisterRequestDto(
-    @SerializedName("username") val username: String,
+    @SerializedName("name") val fullName: String,
     @SerializedName("email") val email: String,
-    @SerializedName("password") val password: String
+    @SerializedName("password") val password: String,
+    @SerializedName("code") val code: String,
+)
+data class LoginRequestDto(
+     val email: String,
+     val password: String,
 )
 
+// Aka AuthResponse
 data class TokenResponseDto(
     @SerializedName("access_token") val accessToken: String,
     @SerializedName("token_type") val tokenType: String,
-    @SerializedName("user") val user: UserDto
+    @SerializedName("user") val user: UserResponseDto
 )
 
-data class UserDto(
-    val id: Int,
-    val username: String,
-    val email: String
+data class UserResponseDto(
+    @SerializedName("id") val id: Int,
+    @SerializedName("name") val name: String,
+    @SerializedName("role") val role: String?,
+    @SerializedName("email") val email: String
 )
 data class OtpRequestDto(
     @SerializedName("email") val email: String,
-    @SerializedName("code") val code: String,
 )

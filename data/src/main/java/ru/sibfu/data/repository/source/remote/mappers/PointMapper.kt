@@ -19,5 +19,6 @@ fun PointDTO.toDomain(): PointModel {
         // Вызываем маппер для медиа внутри точки
         audioUrl = content?.media?.filter { it.mediaType == "audio" }?.map {it.fileUrl} ?: emptyList(),
         images = content?.media?.filter { it.mediaType == "image" }?.map { it.fileUrl } ?: emptyList(),
+        position = this.position,
     )
 }

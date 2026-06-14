@@ -1,32 +1,44 @@
 package ru.sibfu.data.repository.core
 
+import android.content.SharedPreferences
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class TokenManager @Inject constructor(
-    private val dataStore: DataStore<Preferences>
+    private val encryptedPrefs: SharedPreferences
 ) {
     companion object {
-        private val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
+        private const val ACCESS_TOKEN_KEY = "access_token"
     }
 
-    // Используем runBlocking для интерцептора, так как Interceptor работает в синхронном режиме
-    fun getAccessToken(): String? = runBlocking {
-        dataStore.data.first()[ACCESS_TOKEN_KEY]
+    /**
+     * Получаем токен. Используем withContext(Dispatchers.IO),
+     * чтобы чтение из файла не блокировало основной поток.
+     */
+    suspend fun getAccessToken(): String? = withContext(Dispatchers.IO) {
+        encryptedPrefs.getString(ACCESS_TOKEN_KEY, null)
     }
 
-    suspend fun saveAccessToken(token: String) {
-        dataStore.edit { preferences ->
-            preferences[ACCESS_TOKEN_KEY] = token
-        }
+    /**
+     * Сохраняем токен в зашифрованном виде
+     */
+    suspend fun saveAccessToken(token: String) = withContext(Dispatchers.IO) {
+        encryptedPrefs.edit().putString(ACCESS_TOKEN_KEY, token).apply()
     }
 
-    suspend fun deleteToken() {
-        dataStore.edit { it.clear() }
+    /**
+     * Удаляем все данные (например, при Logout)
+     */
+    suspend fun deleteToken() = withContext(Dispatchers.IO) {
+        encryptedPrefs.edit().clear().apply()
     }
 }

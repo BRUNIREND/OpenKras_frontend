@@ -1,14 +1,14 @@
 package ru.sibfu.data.repository.source.remote.mappers
 
 import ru.sibfu.data.repository.source.remote.DTO.TokenResponseDto
-import ru.sibfu.data.repository.source.remote.DTO.UserDto
+import ru.sibfu.data.repository.source.remote.DTO.UserResponseDto
 import ru.sibfu.domain.AuthResult
 import ru.sibfu.domain.UsersModel
 
-fun UserDto.toDomain(): UsersModel {
+fun UserResponseDto.toDomain(): UsersModel {
     return UsersModel(
         id = this.id,
-        username = this.username,
+        name = this.name,
         email = this.email
     )
 }

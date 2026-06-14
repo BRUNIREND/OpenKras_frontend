@@ -1,12 +1,9 @@
 package ru.sibfu.openkras.navigation
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.internal.composableLambda
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -16,40 +13,106 @@ import ru.sibfu.openkras.features.authentification.signUp.UserRegistrationScreen
 import ru.sibfu.openkras.features.authentification.signUp.otp.OtpScreen
 import ru.sibfu.openkras.features.excursion.ExcursionViewModel
 import ru.sibfu.openkras.features.excursion.ListExcursionScreen
-import ru.sibfu.openkras.features.main.MainState
+import ru.sibfu.openkras.features.excursion.excursionDetail.ExcursionDetailScreen
+import ru.sibfu.openkras.features.excursion.excursionDetail.ExcursionDetailViewModel
+import ru.sibfu.openkras.features.favorites.FavoritesScreen
+import ru.sibfu.openkras.features.favorites.FavoritesViewModel
 import ru.sibfu.openkras.features.main.MainViewModel
+import ru.sibfu.openkras.features.routeNavigation.RouteNavigationScreen
+import ru.sibfu.openkras.features.routeNavigation.RouteNavigationViewModel
+import ru.sibfu.openkras.features.splashScreen.SplashScreen
+import ru.sibfu.openkras.features.user.UserScreen
 
 @Composable
 fun AppNavGraph(
     modifier: Modifier = Modifier,
     mainViewModel: MainViewModel = hiltViewModel(),
     navController: NavHostController,
+    snackbarHostState: SnackbarHostState,
 ){
-    val startState by mainViewModel.startDestination.collectAsState()
-
-
-    if (startState is MainState.Authorized) {
-        NavHost(
-            navController = navController,
-            startDestination = MainScreenGraph.AllExcursionScreen,
-            modifier = modifier
-        ){
-            composable<MainScreenGraph.AllExcursionScreen>{
-                val viewModel = hiltViewModel<ExcursionViewModel>()
-                ListExcursionScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
+    NavHost(
+        navController = navController,
+        startDestination = AuthScreenGraph.SplashScreen,
+        modifier = modifier
+    ){
+        composable<AuthScreenGraph.SplashScreen>{
+            SplashScreen(
+                snackbarHostState = snackbarHostState,
+                onNavigateToLogin = {
+                    navController.navigate(AuthScreenGraph.LoginScreen){
+                        popUpTo(AuthScreenGraph.RegistrationScreen) { inclusive = true }
+                    }
+                },
+                onNavigateToMain = {
+                    navController.navigate(MainScreenGraph.AllExcursionScreen){
+                        popUpTo(AuthScreenGraph.RegistrationScreen) { inclusive = true }
+                    }
+                },
+            )
         }
-    }
-    else {
-        NavHost(
-            navController = navController,
-            startDestination = AuthScreenGraph.LoginScreen,
-            modifier = modifier
-        ){composable<AuthScreenGraph.RegistrationScreen>{
+        composable<MainScreenGraph.AllExcursionScreen>{
+            val viewModel = hiltViewModel<ExcursionViewModel>()
+            ListExcursionScreen(
+                snackbarHostState = snackbarHostState,
+                viewModel = viewModel,
+                onNavigateToDetail = { excursionId ->
+                    navController.navigate(ExcursionScreenGraph.DetailScreen(excursionId))
+                }
+            )
+        }
+        composable<ExcursionScreenGraph.DetailScreen>{
+            val args = it.toRoute<ExcursionScreenGraph.DetailScreen>()
+            val viewModel = hiltViewModel<ExcursionDetailViewModel>()
+            ExcursionDetailScreen(
+                excursionId = args.excursionId,
+                onBackClick = { navController.popBackStack() },
+                viewModel = viewModel,
+                onExcursionStart = { excursionId ->
+                    navController.navigate(ExcursionScreenGraph.StartExcursion(excursionId))
+                }
+            )
+        }
+        composable<ExcursionScreenGraph.StartExcursion> {
+            val args = it.toRoute<ExcursionScreenGraph.StartExcursion>()
+            val viewModel = hiltViewModel<RouteNavigationViewModel>()
+            RouteNavigationScreen(
+                excursionId = args.excursionId,
+                viewModel = viewModel,
+                onExitRoute = { navController.popBackStack() },
+
+            )
+        }
+        composable<MainScreenGraph.FavoriteScreen>{
+            val viewModel = hiltViewModel<FavoritesViewModel>()
+            FavoritesScreen(
+                snackbarHostState = snackbarHostState,
+                viewModel = viewModel,
+                onNavigateToExcursion = { excursionId ->
+                    navController.navigate(ExcursionScreenGraph.DetailScreen(excursionId))
+                }
+            )
+        }
+
+        // TODO("Встроить переход на каждый экран в ProfileScreen")
+        composable<ProfileScreenGraph.ProfileScreen>{
+            UserScreen(
+                onNavigateToAboutApp = {},
+                onNavigateToPrivacyPolicy = {},
+                onNavigateToUsageCondition = {},
+                onNavigateToLogin = {
+                    navController.navigate(AuthScreenGraph.LoginScreen){
+                        popUpTo(ProfileScreenGraph.ProfileScreen){
+                            inclusive = true
+                        }
+                    }
+                },
+                snackbarHostState = snackbarHostState
+            )
+        }
+
+        composable<AuthScreenGraph.RegistrationScreen>{
             UserRegistrationScreen(
+                snackbarHostState = snackbarHostState,
 
                 onNavigateToOtp = { email ->
                     navController.navigate(AuthScreenGraph.OtpScreen(email))
@@ -58,27 +121,34 @@ fun AppNavGraph(
                     navController.navigate(AuthScreenGraph.LoginScreen){
                         popUpTo(AuthScreenGraph.RegistrationScreen) { inclusive = true }
                     }
+                },
+            )
+        }
+
+        composable<AuthScreenGraph.OtpScreen> { backStackEntry ->
+            val args = backStackEntry.toRoute<AuthScreenGraph.OtpScreen>()
+            OtpScreen(
+                snackbarHostState = snackbarHostState,
+                email = args.email,
+                onNavigateToMain = {
+                    navController.navigate(MainScreenGraph.AllExcursionScreen)
+                },
+            )
+        }
+
+        composable<AuthScreenGraph.LoginScreen> {
+            UserLoginScreen(
+                snackbarHostState = snackbarHostState,
+                onNavigateToMain = {
+                    navController.navigate(MainScreenGraph.AllExcursionScreen)
+                },
+                onNavigateToRegistration = {
+                    navController.navigate(AuthScreenGraph.RegistrationScreen){
+                        popUpTo(AuthScreenGraph.LoginScreen){ inclusive = true}
+                    }
                 }
             )
         }
 
-            composable<AuthScreenGraph.OtpScreen> { backStackEntry ->
-                val args = backStackEntry.toRoute<AuthScreenGraph.OtpScreen>()
-                OtpScreen(email = args.email)
-            }
-
-            composable<AuthScreenGraph.LoginScreen> {
-                UserLoginScreen(
-                    onNavigateToMain = {
-                        navController.navigate(MainScreenGraph.AllExcursionScreen)
-                    },
-                    onNavigateToRegistration = {
-                        navController.navigate(AuthScreenGraph.RegistrationScreen){
-                            popUpTo(AuthScreenGraph.LoginScreen){ inclusive = true}
-                        }
-                    }
-                )
-            }
-        }
     }
 }

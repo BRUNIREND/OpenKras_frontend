@@ -1,14 +1,14 @@
 package ru.sibfu.data.repository.source.remote.DTO
 
 import com.google.gson.annotations.SerializedName
-import okhttp3.Address
 
 data class PointDTO(
     @SerializedName("id") val id: Int,
     @SerializedName("latitude") val latitude: Double,
     @SerializedName("longitude") val longitude: Double,
     @SerializedName("radius_meters") val radiusMeters: Int,
-    @SerializedName("contents") val contents: List<PointContentDTO> = emptyList()
+    @SerializedName("contents") val contents: List<PointContentDTO> = emptyList(),
+    @SerializedName("order") val position: Int
 )
 
 data class PointContentDTO(

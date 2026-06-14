@@ -1,10 +1,9 @@
 package ru.sibfu.domain.usecase.authentificationUseCase
 
-import ru.sibfu.domain.AuthResult
 import ru.sibfu.domain.interfaces.IAuthRepository
 import javax.inject.Inject
 
-class logoutUseCase @Inject constructor(
+class LogoutUseCase @Inject constructor(
     private val repository: IAuthRepository
 ) {
     suspend operator fun invoke(

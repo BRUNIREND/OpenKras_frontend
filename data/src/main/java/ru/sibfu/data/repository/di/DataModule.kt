@@ -1,7 +1,5 @@
 package ru.sibfu.data.repository.di
 
-import android.content.Context
-import androidx.datastore.preferences.core.Preferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,23 +8,20 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import ru.sibfu.data.repository.AuthRepositoryImpl
 import ru.sibfu.data.repository.CategoryRepositoryImpl
 import ru.sibfu.data.repository.ExcursionRepositoryImpl
-import ru.sibfu.data.repository.source.remote.api.MuseumApi
-import ru.sibfu.data.repository.source.remote.interceptor.AuthInterceptor
-import ru.sibfu.domain.interfaces.ICategoryRepository
-import ru.sibfu.domain.interfaces.IExcursionRepository
-import java.util.concurrent.TimeUnit
-import javax.inject.Singleton
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.preferencesDataStore
-import dagger.hilt.android.qualifiers.ApplicationContext
-import ru.sibfu.data.repository.AuthRepositoryImpl
 import ru.sibfu.data.repository.core.AuthNetwork
 import ru.sibfu.data.repository.core.MainNetwork
 import ru.sibfu.data.repository.core.TokenManager
 import ru.sibfu.data.repository.source.remote.api.AuthApi
+import ru.sibfu.data.repository.source.remote.api.MuseumApi
+import ru.sibfu.data.repository.source.remote.interceptor.AuthInterceptor
 import ru.sibfu.domain.interfaces.IAuthRepository
+import ru.sibfu.domain.interfaces.ICategoryRepository
+import ru.sibfu.domain.interfaces.IExcursionRepository
+import java.util.concurrent.TimeUnit
+import javax.inject.Singleton
 
 
 @Module
@@ -105,14 +100,15 @@ object DataModule {
         return retrofit.create(MuseumApi::class.java)
     }
 
-    // 7. Репозитории
+
     @Provides
     @Singleton
     fun provideAuthRepository(
         api: AuthApi,
+        museumApi: MuseumApi,
         tokenManager: TokenManager
     ): IAuthRepository {
-        return AuthRepositoryImpl(api, tokenManager)
+        return AuthRepositoryImpl(api, museumApi, tokenManager)
     }
 
     @Provides
