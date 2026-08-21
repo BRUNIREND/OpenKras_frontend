@@ -2,7 +2,9 @@ package ru.sibfu.openkras.features.splashScreen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -46,10 +48,11 @@ fun SplashScreen(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "Красноярский Краеведческий Музей",
+                text = "Открой Красноярск",
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
+            Spacer(modifier = Modifier.height(32.dp))
 
             CircularProgressIndicator(
                 color = MaterialTheme.colorScheme.primary

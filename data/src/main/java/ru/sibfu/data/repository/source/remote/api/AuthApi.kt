@@ -10,9 +10,7 @@ import ru.sibfu.data.repository.source.remote.DTO.TokenResponseDto
 interface AuthApi {
 
     @POST(versionApi + "/auth/login")
-    suspend fun login(
-        @Body request: LoginRequestDto
-    ): TokenResponseDto
+    suspend fun login(@Body request: LoginRequestDto): TokenResponseDto
 
     @POST(versionApi + "/auth/register/verify")
     suspend fun verifyOtp(@Body request: RegisterRequestDto): TokenResponseDto

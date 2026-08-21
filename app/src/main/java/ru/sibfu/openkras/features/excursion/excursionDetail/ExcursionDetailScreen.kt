@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
@@ -19,7 +20,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -42,14 +43,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import ru.sibfu.domain.ExcursionDetailModel
-import ru.sibfu.domain.PointModel
 import ru.sibfu.openkras.R
 import ru.sibfu.openkras.features.excursion.ImageLoader
 import ru.sibfu.openkras.features.excursion.InfoItem
-import ru.sibfu.openkras.ui.theme.ThemePreviews
+
 
 @Composable
 fun ExcursionDetailScreen(
@@ -121,60 +122,12 @@ fun ExcursionDetailScreen(
 
 
 
-val excursionDetailModel = ExcursionDetailModel(
-    id = 1,
-    title = "dsfafasdfsdafsdafsad",
-    description = "dsafffffffffdsafdsafdsafdsafsadfdasfsdafsdafsdafdsafdsafdsafdsafdsafdsa",
-    duration = 123,
-    distance = 123.0,
-    coverUrl = "",
-    images = listOf("https://img.freepik.com/free-photo/view-funny-animal_23-2151098313.jpg?semt=ais_hybrid&w=740&q=80"),
-    points = listOf(
-        PointModel(
-            id = 1,
-            name = "dsfadsfa",
-            description = "asdasddsa",
-            address = "sadasddsadsa",
-            latitude = 123.0,
-            longitude = 123.0,
-            radiusMeters = 20,
-            audioUrl = listOf("dsfa"),
-            images = listOf("asd"),
-            position = 1
-        ),
-        PointModel(
-            id = 2,
-            name = "dsfadsfa",
-            description = "asdasddsa",
-            address = "sadasddsadsa",
-            latitude = 123.0,
-            longitude = 123.0,
-            radiusMeters = 20,
-            audioUrl = listOf("dsfa"),
-            images = listOf("asd"),
-            position = 2
-        ),
-        PointModel(
-            id = 3,
-            name = "dsfadsfa",
-            description = "asdasddsa",
-            address = "sadasddsadsa",
-            latitude = 123.0,
-            longitude = 123.0,
-            radiusMeters = 20,
-            audioUrl = listOf("dsfa"),
-            images = listOf("asd"),
-            position = 3
-        )
-    ),
-    categoryId = 1,
-    isFavorite = true
-)
-@ThemePreviews
+
+//@ThemePreviews
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ExcursionDetailContent(
-    excursion: ExcursionDetailModel = excursionDetailModel,
+    excursion: ExcursionDetailModel,
     isFavorite: Boolean = true,
     onBackClick: () -> Unit = {},
     onIntent: (ExcursionDetailIntent) -> Unit = {}
@@ -223,7 +176,10 @@ fun ExcursionDetailContent(
                         modifier = Modifier.fillMaxSize()
                     ) { page ->
                         val url = images[page]
-                        ImageLoader(url)
+                        ImageLoader(
+                            modifier = Modifier.fillMaxSize(),
+                            url = url
+                        )
                     }
 
                     // Индикаторы страниц
@@ -257,7 +213,7 @@ fun ExcursionDetailContent(
                             .size(40.dp)
                             .background(burgundyColor, CircleShape)
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Назад", tint = Color.White)
                     }
 
                     // Кнопки Избранное и Скачать
@@ -285,6 +241,7 @@ fun ExcursionDetailContent(
                                 tint = if (isFavorite) burgundyColor else Color.Black
                             )
                         }
+                        Spacer(modifier = Modifier.width(8.dp))
                         IconButton(
                             onClick = { onIntent(ExcursionDetailIntent.DownloadLocally) },
                             modifier = Modifier
@@ -298,12 +255,14 @@ fun ExcursionDetailContent(
             }
 
             item {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(start = 16.dp, top = 20.dp, end = 16.dp)) {
                     Text(
                         text = excursion.title,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = Color.Black,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -325,7 +284,7 @@ fun ExcursionDetailContent(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = excursion.description,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         color = Color.DarkGray
                     )
 

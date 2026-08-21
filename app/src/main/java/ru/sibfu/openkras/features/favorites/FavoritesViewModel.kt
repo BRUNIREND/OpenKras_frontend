@@ -14,13 +14,11 @@ import kotlinx.coroutines.launch
 import ru.sibfu.domain.usecase.categoryUseCase.GetAllCategoryUseCase
 import ru.sibfu.domain.usecase.exception.NetworkResult
 import ru.sibfu.domain.usecase.excursionUseCase.GetFavoriteExcursionUseCase
-import ru.sibfu.domain.usecase.excursionUseCase.SearchExcursionUseCase
 import javax.inject.Inject
 
 @HiltViewModel
 class FavoritesViewModel @Inject constructor(
     private val getFavoriteExcursionsUseCase: GetFavoriteExcursionUseCase,
-    private val searchExcursionUseCase: SearchExcursionUseCase,
     private val getCategoryUseCase: GetAllCategoryUseCase,
 ) : ViewModel(){
     private val _state = MutableStateFlow(FavoritesState())
@@ -62,8 +60,8 @@ class FavoritesViewModel @Inject constructor(
                     _state.update { it.copy(
                         isLoading = false,
                         categoryItems = categoriesResult.await().getOrDefault(emptyList()),
-                        allItems = result.data,
-                        items = result.data
+                        allFavoriteItems = result.data,
+                        displayedItems = result.data
                     )}
                     applyFilters()
                 }
@@ -75,7 +73,7 @@ class FavoritesViewModel @Inject constructor(
     }
     private fun applyFilters() {
         _state.update { currentState ->
-            val filteredList = currentState.allItems.filter { excursion ->
+            val filteredList = currentState.allFavoriteItems.filter { excursion ->
                 val matchesQuery = currentState.queryField.isEmpty() ||
                         excursion.title.contains(currentState.queryField, ignoreCase = true)
 
@@ -85,7 +83,7 @@ class FavoritesViewModel @Inject constructor(
                 matchesQuery && matchesCategory
             }
 
-            currentState.copy(items = filteredList)
+            currentState.copy(displayedItems = filteredList)
         }
     }
 }

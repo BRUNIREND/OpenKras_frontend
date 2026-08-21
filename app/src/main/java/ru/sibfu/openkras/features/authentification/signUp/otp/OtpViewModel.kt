@@ -62,6 +62,9 @@ class OtpViewModel @Inject constructor(
                     sendNewCodeToBackend()
                 }
             }
+            is OtpIntent.navigateToAllScreen -> viewModelScope.launch {
+                _effect.trySend(OtpEffect.NavigateToMain)
+            }
         }
     }
 
@@ -70,8 +73,6 @@ class OtpViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true) }
             when (val result = verifyOtpUseCase(_state.value.code)) {
                 is NetworkResult.Success -> {
-                    _effect.send(OtpEffect.ShowSnackbar("Вы авторизованы блять"))
-                    _effect.send(OtpEffect.NavigateToMain)
                     _state.update { it.copy(isLoading = false, error = null) }
                 }
                 is NetworkResult.Error -> {
@@ -111,12 +112,8 @@ class OtpViewModel @Inject constructor(
         triggerNewTimer()
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-
             when (val result =
-                reSendOtpCodeUseCase(
-                    email = email,
-                )
-            ) {
+                reSendOtpCodeUseCase(email = email)) {
                 is NetworkResult.Success -> {
                     _effect.send(OtpEffect.ShowSnackbar("Код успешно отправлен"))
                     _state.update { it.copy(isLoading = false) }

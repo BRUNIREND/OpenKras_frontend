@@ -1,6 +1,5 @@
 package ru.sibfu.openkras.features.authentification.signIn
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -60,8 +59,6 @@ class UserLoginViewModel @Inject constructor(
                     _state.update { it.copy(isLoading = false, error = result.message) }
                 }
                 is NetworkResult.Exception -> {
-                    // Ошибка сети (нет интернета)
-                    Log.d("Authorization_DEBUG", result.e.toString())
                     _state.update { it.copy(isLoading = false, error = "Проверьте подключение к интернету") }
                 }
             }

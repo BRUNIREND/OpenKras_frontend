@@ -16,6 +16,7 @@ sealed class OtpIntent {
     data class CodeChanged(val value: String) : OtpIntent()
     data object VerifyClicked : OtpIntent()
     data object ResendClicked : OtpIntent()
+    data object navigateToAllScreen : OtpIntent()
 }
 
 sealed class OtpEffect {

@@ -18,7 +18,8 @@ fun ExcursionDetailDTO.toDomain(): ExcursionDetailModel = ExcursionDetailModel(
     images = this.images.map { it.file_url },
     distance = this.distance ?: 0.0,
     duration = this.duration ?: 0,
-    isFavorite = this.isFavorite
+    isFavorite = this.isFavorite,
+    isCompleted = this.isCompleted
 )
 
 // 1. Главный маппер для всей ручки
@@ -32,6 +33,7 @@ fun ExcursionShortDTO.toDomain(): ExcursionShortModel {
         description = this.description ?: "",
         distance = this.distance ?: 0.0,
         duration = this.duration ?: 0,
+        isCompleted = this.isCompleted
     )
 }
 

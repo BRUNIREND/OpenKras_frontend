@@ -63,7 +63,7 @@ fun OtpScreen(
 
     OtpScreenContent(
         state = state,
-        onIntent = viewModel::handleIntent
+        onIntent = { viewModel.handleIntent(it) }
     )
 }
 
@@ -146,7 +146,10 @@ fun OtpScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                onClick = { onIntent(OtpIntent.VerifyClicked) },
+                onClick = {
+                    onIntent(OtpIntent.VerifyClicked)
+                    onIntent(OtpIntent.navigateToAllScreen)
+              },
                 enabled = state.code.length == 6 && !state.isLoading,
                 shape = RoundedCornerShape(16.dp)
             ) {
@@ -157,7 +160,7 @@ fun OtpScreenContent(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Подтверить")
+                    Text("Подтверить", color = Color.White)
                 }
             }
 

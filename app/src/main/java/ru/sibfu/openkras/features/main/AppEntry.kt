@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -20,7 +19,6 @@ import ru.sibfu.openkras.ui.theme.CustomTopAppBar
 
 @Composable
 fun AppEntry(
-    mainViewModel: MainViewModel = hiltViewModel()
 ){
 
     val globalSnackbarHostState = remember { SnackbarHostState() }
@@ -48,9 +46,6 @@ fun AppEntry(
     Scaffold (
         topBar = {
             if (shouldShowTopAppBar){
-//                val isProfileRoute = currentDestination?.hasRoute<ProfileScreenGraph>() == true
-//                Log.d("Navigation", "isProfileRoute: $isProfileRoute")
-//                Log.d("Navigation2", "current route: ${currentDestination?.route}")
 
                 val currentRouteClass = userScreenDetails.find {
                     currentDestination?.hasRoute(it) == true

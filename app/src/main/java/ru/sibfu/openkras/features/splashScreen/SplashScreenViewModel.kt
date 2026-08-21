@@ -28,7 +28,7 @@ class SplashViewModel @Inject constructor(
     private fun checkUserSession() {
         viewModelScope.launch {
             val token = tokenManager.getAccessToken()
-            android.util.Log.d("AUTH_DEBUG", "Токен из DataStore: '$token'")
+//            android.util.Log.d("AUTH_DEBUG", "Токен из DataStore: '$token'")
 
             if (token == null) {
                 _state.value = SplashState(SplashNavigationState.NavigateToLogin)
@@ -45,11 +45,13 @@ class SplashViewModel @Inject constructor(
                     if (result.code == 401 || result.code == 404) {
                         tokenManager.deleteToken()
                         _state.value = SplashState(SplashNavigationState.NavigateToLogin)
+                        android.util.Log.d("AUTH_DEBUG", "Проблема с юзером")
                     }
                 }
 
                 is NetworkResult.Exception -> {
-                    _state.value = SplashState(SplashNavigationState.NavigateToMain)
+                    android.util.Log.d("AUTH_DEBUG", "Проблема с юзером: ${result.e.message}")
+                    _state.value = SplashState(SplashNavigationState.NavigateToLogin)
                 }
             }
         }

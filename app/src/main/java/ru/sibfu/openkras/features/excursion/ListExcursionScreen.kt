@@ -288,15 +288,21 @@ fun ExcursionItem(
                 modifier = Modifier.fillMaxWidth().height(92.dp)
             ){
                 Log.d("ImageLoader", "url: ${excursion.previewImageUrl}")
-                ImageLoader(url = excursion.previewImageUrl)
-
-                //Todo(Сделать чек наличия статуса от пользователя к экскурсии)
-                StatusBadge(
-                    status = "Пройдено", //Todo(Добавить нормальный статус),
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(8.dp)
+                ImageLoader(
+                    modifier = modifier.fillMaxWidth()
+                                .height(92.dp)
+                                .clip(RoundedCornerShape(8.dp, 8.dp)),
+                    url = excursion.previewImageUrl
                 )
+
+                if (excursion.isCompleted){
+                    StatusBadge(
+                        status = "Пройдено",
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp)
+                    )
+                }
 
                 IconButton(
                     onClick = {
@@ -379,7 +385,7 @@ fun InfoItem(
 
 //TODO(Заменить localhost на проде)
 @Composable
-fun ImageLoader(url: String?){
+fun ImageLoader(modifier: Modifier, url: String?){
     val correctedUrl = url?.replace("localhost:9000", "10.0.2.2:9000")
         ?.replace("127.0.0.1:9000", "10.0.2.2:9000")
     AsyncImage(
@@ -387,10 +393,7 @@ fun ImageLoader(url: String?){
         contentDescription = "Фото экскурсии",
         placeholder = painterResource(R.drawable.img_mock),
         error = painterResource(R.drawable.img_mock_error),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(92.dp)
-            .clip(RoundedCornerShape(8.dp, 8.dp)),
+        modifier = modifier,
         contentScale = ContentScale.Crop
     )
 }

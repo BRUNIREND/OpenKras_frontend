@@ -1,8 +1,15 @@
 package ru.sibfu.data.repository.di
 
+import android.content.Context
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -11,15 +18,20 @@ import retrofit2.converter.gson.GsonConverterFactory
 import ru.sibfu.data.repository.AuthRepositoryImpl
 import ru.sibfu.data.repository.CategoryRepositoryImpl
 import ru.sibfu.data.repository.ExcursionRepositoryImpl
+import ru.sibfu.data.repository.LocalExcursionRepositoryImpl
 import ru.sibfu.data.repository.core.AuthNetwork
 import ru.sibfu.data.repository.core.MainNetwork
 import ru.sibfu.data.repository.core.TokenManager
+import ru.sibfu.data.repository.source.local.dao.ExcursionDao
+import ru.sibfu.data.repository.source.local.entity.ExcursionLocalEntity
+import ru.sibfu.data.repository.source.local.entity.PointLocalEntity
 import ru.sibfu.data.repository.source.remote.api.AuthApi
 import ru.sibfu.data.repository.source.remote.api.MuseumApi
 import ru.sibfu.data.repository.source.remote.interceptor.AuthInterceptor
 import ru.sibfu.domain.interfaces.IAuthRepository
 import ru.sibfu.domain.interfaces.ICategoryRepository
 import ru.sibfu.domain.interfaces.IExcursionRepository
+import ru.sibfu.domain.interfaces.ILocalExcursionRepository
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -121,5 +133,41 @@ object DataModule {
     @Singleton
     fun provideCategoryRepository(api: MuseumApi): ICategoryRepository {
         return CategoryRepositoryImpl(api)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFusedLocationClient(
+        @ApplicationContext context: Context
+    ): FusedLocationProviderClient {
+        return LocationServices.getFusedLocationProviderClient(context)
+    }
+
+    @Provides
+    @Singleton
+    fun bindLocalExcursionRepository(
+        impl: LocalExcursionRepositoryImpl
+    ): ILocalExcursionRepository {
+        return impl
+    }
+
+    @Database(entities = [ExcursionLocalEntity::class, PointLocalEntity::class], version = 1)
+    abstract class AppDatabase : RoomDatabase() {
+        abstract fun excursionDao(): ExcursionDao
+    }
+
+
+    @Provides@Singleton
+    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
+        return Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            "openkras_db"
+        ).build()
+    }
+
+    @Provides
+    fun provideExcursionDao(db: AppDatabase): ExcursionDao {
+        return db.excursionDao()
     }
 }

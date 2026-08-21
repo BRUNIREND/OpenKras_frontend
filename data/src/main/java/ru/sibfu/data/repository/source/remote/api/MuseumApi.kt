@@ -37,4 +37,8 @@ interface MuseumApi {
 
     @GET(versionApi + "/users/me")
     suspend fun getCurrentUser(): UserResponseDto
+
+
+    @POST("$versionApi/excursions/complete/{excursion_id}")
+    suspend fun completeExcursion(@Path("excursion_id") excursionId: Int)
 }

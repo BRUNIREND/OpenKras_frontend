@@ -15,20 +15,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import ru.sibfu.openkras.features.excursion.ExcursionItem
 import ru.sibfu.openkras.features.excursion.SearchWithFilter
 
 @Composable
 fun FavoritesScreen(
-    navController: NavController = rememberNavController(),
     viewModel: FavoritesViewModel = hiltViewModel(),
     snackbarHostState: SnackbarHostState,
     onNavigateToExcursion: (Int) -> Unit = {},
 ){
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+
+
+    LaunchedEffect(Unit) {
+        viewModel.handleIntent(FavoritesIntent.LoadData)
+    }
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when(effect){
@@ -76,11 +78,12 @@ fun FavoriteScreenContent(
                 ExcursionItem(
                     modifier = Modifier,
                     excursion = excursion,
-                    onClick = { onIntent(FavoritesIntent.onNavigateToExcursionClick(excursion.id)) }
+                    onClick = { onIntent(FavoritesIntent.onNavigateToExcursionClick(excursion.id)) },
+                    isFavorite = excursion.isFavorite,
                 )
             }
         }
-        if (!state.isLoading && state.allFavoriteItems.isEmpty()) {
+        if (!state.isLoading && state.displayedItems.isEmpty()) {
             Text(
                 text = "У вас пока нет избранных экскурсий",
                 modifier = Modifier.align(Alignment.Center)

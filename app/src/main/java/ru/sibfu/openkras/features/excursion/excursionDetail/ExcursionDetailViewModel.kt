@@ -10,18 +10,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import ru.sibfu.domain.interfaces.IExcursionRepository
 import ru.sibfu.domain.usecase.exception.NetworkResult
 import ru.sibfu.domain.usecase.excursionUseCase.AddExcursionToFavoritesUseCase
+import ru.sibfu.domain.usecase.excursionUseCase.GetExcursionById
 import ru.sibfu.domain.usecase.excursionUseCase.RemoveExcursionFromFavoritesUseCase
+import ru.sibfu.domain.usecase.excursionUseCase.SaveExcursionLocallyUseCase
 import javax.inject.Inject
 
 
 @HiltViewModel
 class ExcursionDetailViewModel @Inject constructor(
-    private val repository: IExcursionRepository,
+    private val getExcursionById: GetExcursionById,
     private val addExcursionToFavoritesUseCase: AddExcursionToFavoritesUseCase,
-    private val removeExcursionFromFavoritesUseCase: RemoveExcursionFromFavoritesUseCase
+    private val removeExcursionFromFavoritesUseCase: RemoveExcursionFromFavoritesUseCase,
+    private val saveExcursionLocallyUseCase: SaveExcursionLocallyUseCase
     // SavedStateHandle можно использовать для получения id экскурсии из навигации
 ) : ViewModel() {
 
@@ -34,7 +36,7 @@ class ExcursionDetailViewModel @Inject constructor(
     fun loadExcursionDetails(id: Int) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            when (val result = repository.getExcursionById(id)) {
+            when (val result = getExcursionById(id)) {
                 is NetworkResult.Success -> {
                     // В реальной жизни статус избранного можно проверить локально или получить с бэка
                     _state.update { it.copy(
@@ -66,7 +68,22 @@ class ExcursionDetailViewModel @Inject constructor(
     fun handleIntent(intent: ExcursionDetailIntent) {
         when (intent) {
             ExcursionDetailIntent.DownloadLocally -> {
-                // Логика сохранения в кэш/локальную БД
+                val currentData = _state.value.data
+                if (currentData != null) {
+                    viewModelScope.launch {
+                        _state.update { it.copy(
+                            isLoading = true
+                        ) }
+                        try {
+                            saveExcursionLocallyUseCase(currentData)
+                            _state.update { it.copy(isLoading = false) }
+                        } catch (e: Exception) {
+                            _state.update { it.copy(
+                                error = e.message
+                            ) }
+                        }
+                    }
+                }
             }
 
             is ExcursionDetailIntent.onAddExcursionToFavorites -> viewModelScope.launch {
@@ -89,9 +106,8 @@ class ExcursionDetailViewModel @Inject constructor(
             }
 
             is ExcursionDetailIntent.StartRoute -> viewModelScope.launch {
-                _state.value.data?.let {
-                    _effect.trySend(ExcursionDetailEffect.NavigateToRoute(it.id))
-                }
+                _effect.trySend(ExcursionDetailEffect.NavigateToRoute(intent.excursionId))
+
             }
         }
     }

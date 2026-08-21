@@ -22,6 +22,9 @@ import ru.sibfu.openkras.features.routeNavigation.RouteNavigationScreen
 import ru.sibfu.openkras.features.routeNavigation.RouteNavigationViewModel
 import ru.sibfu.openkras.features.splashScreen.SplashScreen
 import ru.sibfu.openkras.features.user.UserScreen
+import ru.sibfu.openkras.features.user.sideScreens.AboutAppScreen
+import ru.sibfu.openkras.features.user.sideScreens.PrivacyPolicyScreen
+import ru.sibfu.openkras.features.user.sideScreens.UsageConditionsScreen
 
 @Composable
 fun AppNavGraph(
@@ -79,8 +82,17 @@ fun AppNavGraph(
                 excursionId = args.excursionId,
                 viewModel = viewModel,
                 onExitRoute = { navController.popBackStack() },
-
+                onNavigateToExcursionList = {navController.navigate(MainScreenGraph.AllExcursionScreen)}
             )
+        }
+        composable<ProfileScreenGraph.AboutApp>{
+            AboutAppScreen()
+        }
+        composable<ProfileScreenGraph.PrivacyPolicy>{
+            PrivacyPolicyScreen()
+        }
+        composable<ProfileScreenGraph.UsageCondition>{
+            UsageConditionsScreen()
         }
         composable<MainScreenGraph.FavoriteScreen>{
             val viewModel = hiltViewModel<FavoritesViewModel>()
@@ -93,12 +105,11 @@ fun AppNavGraph(
             )
         }
 
-        // TODO("Встроить переход на каждый экран в ProfileScreen")
         composable<ProfileScreenGraph.ProfileScreen>{
             UserScreen(
-                onNavigateToAboutApp = {},
-                onNavigateToPrivacyPolicy = {},
-                onNavigateToUsageCondition = {},
+                onNavigateToAboutApp = {navController.navigate(ProfileScreenGraph.AboutApp)},
+                onNavigateToPrivacyPolicy = {navController.navigate(ProfileScreenGraph.PrivacyPolicy)},
+                onNavigateToUsageCondition = {navController.navigate(ProfileScreenGraph.UsageCondition)},
                 onNavigateToLogin = {
                     navController.navigate(AuthScreenGraph.LoginScreen){
                         popUpTo(ProfileScreenGraph.ProfileScreen){
@@ -113,7 +124,6 @@ fun AppNavGraph(
         composable<AuthScreenGraph.RegistrationScreen>{
             UserRegistrationScreen(
                 snackbarHostState = snackbarHostState,
-
                 onNavigateToOtp = { email ->
                     navController.navigate(AuthScreenGraph.OtpScreen(email))
                 },
@@ -149,6 +159,5 @@ fun AppNavGraph(
                 }
             )
         }
-
     }
 }
